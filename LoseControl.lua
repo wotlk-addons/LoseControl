@@ -24,6 +24,15 @@ local Root    = LOSECONTROL["Root"]
 local Snare   = LOSECONTROL["Snare"]
 local Immune  = LOSECONTROL["Immune"]
 local PvE     = LOSECONTROL["PvE"]
+local TypeMap = {
+	[CC] = "CC",
+	[Silence] = "Silence",
+	[Disarm] = "Disarm",
+	[Root] = "Root",
+	[Snare] = "Snare",
+	[Immune] = "Immune",
+	[PvE] = "PvE",
+}
 
 local spellIds = {
 	-- Death Knight
@@ -161,7 +170,7 @@ local spellIds = {
 	[642]   = Immune,	-- Divine Shield (Paladin)
 	[45438] = Immune,	-- Ice Block (Mage)
 	[34692] = Immune,	-- The Beast Within (Hunter)
-	[19263] = "Immune",	-- Deterrence (Hunter)
+	[19263] = Immune,	-- Deterrence (Hunter)
 	-- PvE
 	[28169] = PvE,		-- Mutating Injection (Grobbulus)
 	[28059] = PvE,		-- Positive Charge (Thaddius)
@@ -438,7 +447,7 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 
 		if LoseControlDB.tracking[abilities[name]] and expirationTime > maxExpirationTime then
 			-- only do indexof here to save on iterations
-			local prio = IndexOf(LoseControlDB.priorities)
+			local prio = IndexOf(LoseControlDB.priorities, TypeMap[abilities[name]])
 			-- low prio = beginning of table = better 
 			if prio < maxPriority then
 				maxPriority = prio
@@ -455,7 +464,8 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 	end
 
 	-- Track Immunities
-	if not Icon and LoseControlDB.tracking[Immune] then -- only bother checking for immunities if there were no debuffs found
+	local immuPrio = IndexOf(LoseControlDB.priorities, "Immune") -- use a string
+	if not Icon and LoseControlDB.tracking[Immune] and immuPrio < maxPriority then -- only bother checking for immunities if there were no debuffs found
 		for i = 1, 40 do
 			name, _, icon, _, _, duration, expirationTime = UnitBuff(unitId, i)
 			if not name then break
