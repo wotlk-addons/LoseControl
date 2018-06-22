@@ -234,12 +234,23 @@ local anchors = {
 	-- more to come here?
 }
 
+local ALL_CATS = [
+	"Immune",
+	"CC",
+	"PvE",
+	"Silence",
+	"Disarm",
+	"Root",
+	"Snare",
+]
+
 -------------------------------------------------------------------------------
 -- Default settings
 local DBdefaults = {
-	version = 3.31,
+	version = 3.33,
 	noCooldownCount = false,
-	tracking = { -- To Do: Priority
+	priorities = ALL_CATS,
+	tracking = {
 		Immune  = true,  -- 100
 		CC      = true,  -- 90
 		PvE     = true,  -- 80
@@ -343,21 +354,8 @@ function LoseControl:ADDON_LOADED(arg1)
 	if arg1 == L then
 		if _G.LoseControlDB and _G.LoseControlDB.version then
 			if _G.LoseControlDB.version < DBdefaults.version then
-				if _G.LoseControlDB.version >= 3.22 then -- minor changes, so try to update without losing settings
-					_G.LoseControlDB.tracking = {
-						Immune  = false, --100
-						CC      = true,  -- 90
-						PvE     = true,  -- 80
-						Silence = true,  -- 70
-						Disarm  = true,  -- 60
-						Root    = false, -- 50
-						Snare   = false, -- 40
-					}
-					_G.LoseControlDB.version = 3.32
-				else -- major changes, must reset settings
-					_G.LoseControlDB = CopyTable(DBdefaults)
-					log(LOSECONTROL["LoseControl reset."])
-				end
+				_G.LoseControlDB = CopyTable(DBdefaults)
+				log(LOSECONTROL["LoseControl reset."])
 			end
 		else -- never installed before
 			_G.LoseControlDB = CopyTable(DBdefaults)
@@ -390,6 +388,15 @@ function LoseControl:PLAYER_ENTERING_WORLD() -- this correctly anchors enemy are
 	--self:SetAlpha(frame.alpha) -- doesn't seem to work; must manually set alpha after the cooldown is displayed, otherwise it doesn't apply.
 end
 
+local function IndexOf(tabl, value)
+	for k, v in pairs(tabl) do
+		if v == value then
+			return k
+		end
+	end
+	return 0
+end
+
 local WYVERN_STING = GetSpellInfo(19386)
 local PSYCHIC_HORROR = GetSpellInfo(64058)
 local UnitDebuff = UnitDebuff
@@ -404,6 +411,7 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 	if self:GetKick() then return end
 	
 	local maxExpirationTime = 0
+	local maxPriority = 0
 	local _, name, icon, Icon, duration, Duration, expirationTime, wyvernsting
 
 	for i = 1, 40 do
@@ -429,9 +437,14 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 		end
 
 		if LoseControlDB.tracking[abilities[name]] and expirationTime > maxExpirationTime then
-			maxExpirationTime = expirationTime
-			Duration = duration
-			Icon = icon
+			-- only do indexof here to save on iterations
+			local prio = IndexOf(LoseControlDB.priorities)
+			if prio > maxPriority
+				maxPriority = prio
+				maxExpirationTime = expirationTime
+				Duration = duration
+				Icon = icon
+			end
 		end
 	end
 
