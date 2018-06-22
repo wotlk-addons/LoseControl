@@ -234,7 +234,7 @@ local anchors = {
 	-- more to come here?
 }
 
-local ALL_CATS = [
+local ALL_CATS = {
 	"Immune",
 	"CC",
 	"PvE",
@@ -242,7 +242,7 @@ local ALL_CATS = [
 	"Disarm",
 	"Root",
 	"Snare",
-]
+}
 
 -------------------------------------------------------------------------------
 -- Default settings
@@ -411,7 +411,7 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 	if self:GetKick() then return end
 	
 	local maxExpirationTime = 0
-	local maxPriority = 0
+	local maxPriority = 99
 	local _, name, icon, Icon, duration, Duration, expirationTime, wyvernsting
 
 	for i = 1, 40 do
@@ -439,7 +439,8 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 		if LoseControlDB.tracking[abilities[name]] and expirationTime > maxExpirationTime then
 			-- only do indexof here to save on iterations
 			local prio = IndexOf(LoseControlDB.priorities)
-			if prio > maxPriority
+			-- low prio = beginning of table = better 
+			if prio < maxPriority then
 				maxPriority = prio
 				maxExpirationTime = expirationTime
 				Duration = duration
