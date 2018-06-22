@@ -12,6 +12,7 @@ Thanks! :)
 ]]
 
 local L = "LoseControl"
+local UIParent = UIParent -- it's faster to keep local references to frequently used global vars
 
 local function log(msg) DEFAULT_CHAT_FRAME:AddMessage(msg) end -- alias for convenience
 
@@ -44,6 +45,7 @@ local spellIds = {
 	[58179] = Snare,	-- Infected Wounds
 	[61391] = Snare,	-- Typhoon
 	-- Hunter
+	[60210] = "CC",		-- Freezing Arrow Effect
 	[3355]  = CC,		-- Freezing Trap Effect
 	[24394] = CC,		-- Intimidation
 	[1513]  = CC,		-- Scare Beast (works against Druids in most forms and Shamans using Ghost Wolf)
@@ -128,6 +130,7 @@ local spellIds = {
 	[6358]  = CC,		-- Seduction (Succubus)
 	[30283] = CC,		-- Shadowfury
 	[24259] = Silence,	-- Spell Lock (Felhunter)
+--	[43523] = "Silence",-- UA silence marche pas
 	[18118] = Snare,	-- Aftermath
 	[18223] = Snare,	-- Curse of Exhaustion
 	-- Warrior
@@ -158,6 +161,7 @@ local spellIds = {
 	[642]   = Immune,	-- Divine Shield (Paladin)
 	[45438] = Immune,	-- Ice Block (Mage)
 	[34692] = Immune,	-- The Beast Within (Hunter)
+	[19263] = "Immune",	-- Deterrence (Hunter)
 	-- PvE
 	[28169] = PvE,		-- Mutating Injection (Grobbulus)
 	[28059] = PvE,		-- Positive Charge (Thaddius)
@@ -235,21 +239,25 @@ local anchors = {
 local DBdefaults = {
 	version = 3.31,
 	noCooldownCount = false,
-	tracking = {
-		CC      = true,
-		Silence = true,
-		Disarm  = true,
-		Root    = false,
-		Snare   = false,
-		Immune  = false,
-		PvE     = true,
+	tracking = { -- To Do: Priority
+		Immune  = true,  -- 100
+		CC      = true,  -- 90
+		PvE     = true,  -- 80
+		Silence = true,  -- 70
+		Disarm  = true,  -- 60
+		Root    = false, -- 50
+		Snare   = false, -- 40
 	},
 	frames = {
 		player = {
 			enabled = true,
-			size = 36,
-			alpha = 1,
+			size = 48,
+			alpha = 0.65,
 			anchor = "None",
+			point = "CENTER",
+			relativePoint = "CENTER",
+			x = 0,
+			y = 110,
 		},
 		target = {
 			enabled = true,
@@ -259,7 +267,7 @@ local DBdefaults = {
 		},
 		focus = {
 			enabled = true,
-			size = 44,
+			size = 56,
 			alpha = 1,
 			anchor = "Blizzard",
 		},
@@ -333,11 +341,19 @@ LoseControl:SetScript("OnEvent", LoseControl.OnEvent)
 -- Handle default settings
 function LoseControl:ADDON_LOADED(arg1)
 	if arg1 == L then
-		if _G.LoseControlDB then
+		if _G.LoseControlDB and _G.LoseControlDB.version then
 			if _G.LoseControlDB.version < DBdefaults.version then
 				if _G.LoseControlDB.version >= 3.22 then -- minor changes, so try to update without losing settings
-					_G.LoseControlDB.tracking[Immune] = false
-					_G.LoseControlDB.version = 3.31
+					_G.LoseControlDB.tracking = {
+						Immune  = false, --100
+						CC      = true,  -- 90
+						PvE     = true,  -- 80
+						Silence = true,  -- 70
+						Disarm  = true,  -- 60
+						Root    = false, -- 50
+						Snare   = false, -- 40
+					}
+					_G.LoseControlDB.version = 3.32
 				else -- major changes, must reset settings
 					_G.LoseControlDB = CopyTable(DBdefaults)
 					log(LOSECONTROL["LoseControl reset."])
@@ -355,7 +371,8 @@ LoseControl:RegisterEvent("ADDON_LOADED")
 
 -- Initialize a frame's position
 function LoseControl:PLAYER_ENTERING_WORLD() -- this correctly anchors enemy arena frames that aren't created until you zone into an arena
-	local frame = LoseControlDB.frames[self.unitId]
+	self.frame = LoseControlDB.frames[self.unitId] -- store a local reference to the frame's settings
+	local frame = self.frame
 	self.anchor = _G[anchors[frame.anchor][self.unitId]] or UIParent
 
 	self:SetParent(self.anchor:GetParent()) -- or LoseControl) -- If Hide() is called on the parent frame, its children are hidden too. This also sets the frame strata to be the same as the parent's.
@@ -428,7 +445,7 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 		for i = 1, 40 do
 			name, _, icon, _, _, duration, expirationTime = UnitBuff(unitId, i)
 			if not name then break
-			elseif abilities[name] == Immune and expirationTime > maxExpirationTime then
+			elseif abilities[name] == "Immune" and expirationTime > maxExpirationTime then
 				maxExpirationTime = expirationTime
 				Duration = duration
 				Icon = icon
@@ -862,7 +879,7 @@ SizeSlider:SetPoint("TOPLEFT", AnchorDropDown, "BOTTOMLEFT", 0, -24)		AlphaSlide
 
 -------------------------------------------------------------------------------
 OptionsPanel.default = function() -- This method will run when the player clicks "defaults".
-	_G.LoseControlDB.version = nil
+	_G.LoseControlDB = nil
 	LoseControl:ADDON_LOADED(L)
 	for _, v in pairs(LC) do
 		v:PLAYER_ENTERING_WORLD()
@@ -904,11 +921,11 @@ SlashCmdList[L] = function(cmd)
 	elseif cmd == "lock" then
 		Unlock:SetChecked(false)
 		Unlock:OnClick()
-		log(L .. " locked.")
+--		log(L .. " locked.")
 	elseif cmd == "unlock" then
 		Unlock:SetChecked(true)
 		Unlock:OnClick()
-		log(L .. " unlocked.")
+--		log(L .. " unlocked.")
 	elseif cmd:sub(1, 6) == "enable" then
 		local unit = cmd:sub(8, 14)
 		if LoseControlDB.frames[unit] then
