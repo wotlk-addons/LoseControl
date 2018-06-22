@@ -445,11 +445,11 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 			name = nil
 		end
 
-		if LoseControlDB.tracking[abilities[name]] and expirationTime > maxExpirationTime then
+		if LoseControlDB.tracking[abilities[name]] then
 			-- only do indexof here to save on iterations
 			local prio = IndexOf(LoseControlDB.priorities, TypeMap[abilities[name]])
 			-- low prio = beginning of table = better 
-			if prio < maxPriority then
+			if prio < maxPriority or (prio == maxPriority and expirationTime > maxExpirationTime) then
 				maxPriority = prio
 				maxExpirationTime = expirationTime
 				Duration = duration
