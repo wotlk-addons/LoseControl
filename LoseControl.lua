@@ -560,7 +560,8 @@ end
 --    The right way to go about it would be to store kicks in a table UnitGUID=>Kick,
 --    but :effort:. For now, this will do.
 function LoseControl:ResetKick(unitId)
-	if not (unitId == self.unitId and frame.enabled and self.anchor:IsVisible()) then return end
+	local frame = LoseControlDB.frames[unitId]
+	if not (unitId == self.unitId and frame and frame.enabled and self.anchor:IsVisible()) then return end
 
 	self.interrupt = nil
 end
