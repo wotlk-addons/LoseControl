@@ -554,11 +554,24 @@ function LoseControl:ClearIcon()
 	self:Hide()
 end
 
+-- V: this is the worst way to go about it
+--    basically when we tab-target, since the unitId doesn't change per say ("target"),
+--    we do not detect that the kick icon shouldn't be displayed.
+--    The right way to go about it would be to store kicks in a table UnitGUID=>Kick,
+--    but :effort:. For now, this will do.
+function LoseControl:ResetKick(unitId)
+	if not (unitId == self.unitId and frame.enabled and self.anchor:IsVisible()) then return end
+
+	self.interrupt = nil
+end
+
 function LoseControl:PLAYER_FOCUS_CHANGED()
+	self:ResetKick("focus")
 	self:UNIT_AURA("focus")
 end
 
 function LoseControl:PLAYER_TARGET_CHANGED()
+	self:ResetKick("target")
 	self:UNIT_AURA("target")
 end
 
@@ -752,6 +765,7 @@ local function AddItem(owner, text, value)
 	info.value = value
 	info.checked = nil -- initially set the menu item to being unchecked
 	UIDropDownMenu_AddButton(info)
+	return info
 end
 
 local UnitDropDownLabel = OptionsPanel:CreateFontString(O.."UnitDropDownLabel", "ARTWORK", "GameFontNormal")
@@ -894,12 +908,53 @@ TrackPvE:SetPoint("TOPLEFT", TrackRoots, "BOTTOMLEFT", 0, -2)
 
 UnitDropDownLabel:SetPoint("TOPLEFT", TrackPvE, "BOTTOMLEFT", 0, -12)
 UnitDropDown:SetPoint("TOPLEFT", UnitDropDownLabel, "BOTTOMLEFT", 0, -8)
-Enabled:SetPoint("TOPLEFT", UnitDropDownLabel, "BOTTOMLEFT", 200, -8)
+Enabled:SetPoint("TOPLEFT", UnitDropDown, "BOTTOMLEFT") --, 200, -8)
 
-AnchorDropDownLabel:SetPoint("TOPLEFT", UnitDropDown, "BOTTOMLEFT", 0, -12)	--StrataDropDownLabel:SetPoint("TOPLEFT", UnitDropDown, "BOTTOMLEFT", 200, -12)
+AnchorDropDownLabel:SetPoint("TOPLEFT", Enabled, "BOTTOMLEFT", 0, 0)	--StrataDropDownLabel:SetPoint("TOPLEFT", UnitDropDown, "BOTTOMLEFT", 200, -12)
 AnchorDropDown:SetPoint("TOPLEFT", AnchorDropDownLabel, "BOTTOMLEFT", 0, -8)	--StrataDropDown:SetPoint("TOPLEFT", StrataDropDownLabel, "BOTTOMLEFT", 0, -8)
 
 SizeSlider:SetPoint("TOPLEFT", AnchorDropDown, "BOTTOMLEFT", 0, -24)		AlphaSlider:SetPoint("TOPLEFT", AnchorDropDown, "BOTTOMLEFT", 200, -24)
+
+local PriorityLabel = OptionsPanel:CreateFontString(O.."PriorityLabel", "ARTWORK", "GameFontNormal")
+PriorityLabel:SetText("Priorities")
+PriorityLabel:SetPoint("TOPLEFT", UnitDropDownLabel, "TOPRIGHT", 110, 30)
+
+local sortLabels = {}
+local upButtons = {}
+local function RedrawPriorities()
+	for i = 1, #LoseControlDB.priorities do
+		sortLabels[i]:SetText(LoseControlDB.priorities[i])
+	end
+end
+for i = 1, #ALL_CATS do
+	local upButton = CreateFrame("Button", O.."PriorityLabelFor"..i.."Button", OptionsPanel, "OptionsButtonTemplate")
+	upButton:SetText("^")
+	upButton:SetWidth(20)
+	tinsert(upButtons, upButton)
+	upButton:SetScript("OnClick", function (self)
+		local prios = LoseControlDB.priorities
+		if i < 1 then return end
+		if i > #prios then return end
+
+		local prev = prios[i - 1]
+		prios[i - 1] = prios[i]
+		prios[i] = prev
+
+		RedrawPriorities()
+	end)
+	upButton.i = i
+
+	local catLabel = OptionsPanel:CreateFontString(O.."PriorityLabelFor"..i, "ARTWORK", "GameFontNormal")
+	catLabel:SetText(ALL_CATS[i])
+	tinsert(sortLabels, catLabel)
+	if i == 1 then
+		upButton:SetPoint("TOPLEFT", PriorityLabel, "BOTTOMLEFT", -25, -5)
+		upButton:Disable()
+	else
+		upButton:SetPoint("TOPLEFT", upButtons[i - 1], "BOTTOMLEFT", 0, 0)
+	end
+	catLabel:SetPoint("TOPLEFT", upButton, "TOPRIGHT", 5, -5)
+end
 
 -------------------------------------------------------------------------------
 OptionsPanel.default = function() -- This method will run when the player clicks "defaults".
@@ -930,6 +985,7 @@ OptionsPanel.refresh = function() -- This method will run when the Interface Opt
 	UIDropDownMenu_SetSelectedValue(StrataDropDown, frame.strata or "LOW")
 	SizeSlider:SetValue(frame.size)
 	AlphaSlider:SetValue(frame.alpha * 100)
+	RedrawPriorities() -- now that we have the actual priorities
 end
 
 InterfaceOptions_AddCategory(OptionsPanel)
@@ -971,7 +1027,7 @@ SlashCmdList[L] = function(cmd)
 		log("    disable <unit>")
 		log("<unit> can be: player, target, focus, party1 ... party4, arena1 ... arena5")
 	else
-		log(L .. ": Type \"/lc help\" for more options.")
+		--log(L .. ": Type \"/lc help\" for more options.")
 		InterfaceOptionsFrame_OpenToCategory(OptionsPanel)
 	end
 end
