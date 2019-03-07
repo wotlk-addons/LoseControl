@@ -1,13 +1,5 @@
 --[[ Code Credits - to the people whose code I borrowed and learned from:
-Vendethiel
-Lawz
-Wowwiki
-Kollektiv
-Tuller
-ckknight
-The authors of Nao!!
-And of course, Blizzard
-
+Vendethiel, Lawz, Wowwiki, Kollektiv, Tuller, ckknight, The authors of Nao!!
 Thanks! :)
 ]]
 
@@ -183,15 +175,15 @@ local spellIds = {
 }
 
 local INTERRUPTS = {
-    [6552] = 4,   -- [Warrior] Pummel
-    [1766] = 5,   -- [Rogue] Kick
-    [47528] = 4,  -- [DK] Mind Freeze
-    [57994] = 2,  -- [Shaman] Wind Shear
-    [19647] = 6,  -- [Warlock] Spell Lock
-    [72] = 6,	  -- [Warrior] Shield Bash
-    [132409] = 6, -- [Warlock] Spell Lock
-    [2139] = 6,   -- [Mage] Counterspell
-    [16979] = 4,  -- [Feral] Feral Charge (Bear)
+    [6552]	= 4,	-- [Warrior] Pummel
+    [72]	= 6,	-- [Warrior] Shield Bash
+    [1766]	= 5,	-- [Rogue] Kick
+    [47528]	= 4,	-- [DK] Mind Freeze
+    [57994]	= 2,	-- [Shaman] Wind Shear
+    [19647]	= 6,	-- [Warlock] Spell Lock
+    [132409]= 6,	-- [Warlock] Spell Lock
+    [2139]	= 8,	-- [Mage] Counterspell
+    [16979]	= 4,	-- [Feral] Feral Charge (Bear)
 }
 
 local abilities = {} -- localized names are saved here
@@ -260,13 +252,13 @@ local DBdefaults = {
 	noCooldownCount = false,
 	priorities = ALL_CATS,
 	tracking = {
-		Immune  = true,  -- 100
-		CC      = true,  -- 90
-		PvE     = true,  -- 80
-		Silence = true,  -- 70
-		Disarm  = true,  -- 60
-		Root    = false, -- 50
-		Snare   = false, -- 40
+		Immune  = true,
+		CC      = true,
+		PvE     = true,
+		Silence = true,
+		Disarm  = true,
+		Root    = false,
+		Snare   = false,
 	},
 	frames = {
 		player = {
