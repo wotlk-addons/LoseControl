@@ -131,7 +131,7 @@ local spellIds = {
 	[6358]  = CC,		-- Seduction (Succubus)
 	[30283] = CC,		-- Shadowfury
 	[24259] = Silence,	-- Spell Lock (Felhunter)
-	[31117] = Silence,	-- UA silence, see exceptions
+--	[43523] = "Silence",-- UA silence marche pas
 	[18118] = Snare,	-- Aftermath
 	[18223] = Snare,	-- Curse of Exhaustion
 	-- Warrior
@@ -398,6 +398,8 @@ local function IndexOf(tabl, value)
 	return 0
 end
 
+local WYVERN_STING = GetSpellInfo(19386)
+local PSYCHIC_HORROR = GetSpellInfo(64058)
 local UnitDebuff = UnitDebuff
 local UnitBuff = UnitBuff
 -- This is the main event
@@ -419,12 +421,19 @@ function LoseControl:UNIT_AURA(unitId) -- fired when a (de)buff is gained/lost
 		if not name then break end -- no more debuffs, terminate the loop
 		--log(i .. ") " .. name .. " | " .. rank .. " | " .. icon .. " | " .. count .. " | " .. debuffType .. " | " .. duration .. " | " .. expirationTime )
 
-		-- exceptions, when different auras have the same name (use icons or spell ids instead, still needs better fix...)
-		if name == "Wyvern Sting" and spellID ~= 49012 and spellID ~= 19386 then
-			name = nil -- hack to skip the next if condition since LUA doesn't have a "continue" statement
-		elseif name == "Psychic Horror" and icon == "Interface\\Icons\\Ability_Warrior_Disarm" then
-			name = nil
-		elseif name == "Unstable Affliction" and icon ~= "Interface\\Icons\\Spell_Holy_Silence" then
+		-- exceptions
+		if name == WYVERN_STING then
+			wyvernsting = 1
+			if not self.wyvernsting then
+				self.wyvernsting = 1 -- this is the first time the debuff has been applied
+			elseif expirationTime > self.wyvernsting_expirationTime then
+				self.wyvernsting = 2 -- this is the second time the debuff has been applied
+			end
+			self.wyvernsting_expirationTime = expirationTime
+			if self.wyvernsting == 2 then
+				name = nil -- hack to skip the next if condition since LUA doesn't have a "continue" statement
+			end
+		elseif name == PSYCHIC_HORROR and icon == "Interface\\Icons\\Ability_Warrior_Disarm" then -- hack to remove Psychic Horror disarm effect
 			name = nil
 		end
 
