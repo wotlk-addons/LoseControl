@@ -46,7 +46,7 @@ local spellIds = {
 	[58179] = Snare,	-- Infected Wounds
 	[61391] = Snare,	-- Typhoon
 	-- Hunter
-	[60210] = "CC",		-- Freezing Arrow Effect
+	[60210] = CC,		-- Freezing Arrow Effect
 	[3355]  = CC,		-- Freezing Trap Effect
 	[24394] = CC,		-- Intimidation
 	[1513]  = CC,		-- Scare Beast (works against Druids in most forms and Shamans using Ghost Wolf)
@@ -134,6 +134,7 @@ local spellIds = {
 	[43523] = Silence,-- UA silence
 	[18118] = Snare,	-- Aftermath
 	[18223] = Snare,	-- Curse of Exhaustion
+	[32752] = CC,       -- Summoning Disorientations (stun for active pet while summoning new one)
 	-- Warrior
 	[7922]  = CC,		-- Charge Stun
 	[12809] = CC,		-- Concussion Blow
@@ -202,6 +203,7 @@ local anchors = {
 	None = {}, -- empty but necessary
 	Blizzard = {
 		player = "PlayerPortrait",
+		pet    = "PetPortrait",
 		target = "TargetFramePortrait",
 		focus  = "FocusFramePortrait",
 		party1 = "PartyMemberFrame1Portrait",
@@ -216,6 +218,7 @@ local anchors = {
 	},
 	Perl = {
 		player = "Perl_Player_Portrait",
+		pet    = "Perl_Player_Pet_Portrait",
 		target = "Perl_Target_Portrait",
 		focus  = "Perl_Focus_Portrait",
 		party1 = "Perl_Party_MemberFrame1_Portrait",
@@ -225,6 +228,7 @@ local anchors = {
 	},
 	XPerl = {
 		player = "XPerl_PlayerportraitFrameportrait",
+		pet    = "XPerl_Player_PetportraitFrameportrait",
 		target = "XPerl_TargetportraitFrameportrait",
 		focus  = "XPerl_FocusportraitFrameportrait",
 		party1 = "XPerl_party1portraitFrameportrait",
@@ -257,19 +261,25 @@ local DBdefaults = {
 		PvE     = true,
 		Silence = true,
 		Disarm  = true,
-		Root    = false,
+		Root    = true,
 		Snare   = false,
 	},
 	frames = {
 		player = {
 			enabled = true,
-			size = 48,
-			alpha = 0.65,
+			size = 36,
+			alpha = 1,
 			anchor = "None",
 			point = "CENTER",
 			relativePoint = "CENTER",
 			x = 0,
 			y = 110,
+		},
+		pet = {
+			enabled = true,
+			size = 36,
+			alpha = 1,
+			anchor = "Blizzard",
 		},
 		target = {
 			enabled = true,
@@ -755,7 +765,7 @@ function UnitDropDown:OnClick()
 	OptionsPanel.refresh() -- easy way to update all the other controls
 end
 UIDropDownMenu_Initialize(UnitDropDown, function() -- sets the initialize function and calls it
-	for _, v in ipairs({ "player", "target", "focus", "party1", "party2", "party3", "party4", "arena1", "arena2", "arena3", "arena4", "arena5" }) do -- indexed manually so they appear in order
+	for _, v in ipairs({ "player", "pet", "target", "focus", "party1", "party2", "party3", "party4", "arena1", "arena2", "arena3", "arena4", "arena5" }) do -- indexed manually so they appear in order
 		AddItem(UnitDropDown, LOSECONTROL[v], v)
 	end
 end)
@@ -1004,7 +1014,7 @@ SlashCmdList[L] = function(cmd)
 		log("    unlock")
 		log("    enable <unit>")
 		log("    disable <unit>")
-		log("<unit> can be: player, target, focus, party1 ... party4, arena1 ... arena5")
+		log("<unit> can be: player, pet, target, focus, party1 ... party4, arena1 ... arena5")
 	else
 		--log(L .. ": Type \"/lc help\" for more options.")
 		InterfaceOptionsFrame_OpenToCategory(OptionsPanel)
